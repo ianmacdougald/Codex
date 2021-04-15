@@ -1,18 +1,23 @@
 + String {
 	exists { ^this.pathMatch.isEmpty.not }
 
-	increment {
-		var path = PathName(this);
-		^CodexIncrementer(
-			path.fileName,
-			path.pathOnly
-		).increment;
-	}
-
 	copyScriptsTo { | newDirectory |
 		this.getScripts.do { | path |
 			File.copy(path, newDirectory+/+PathName(path).fileName);
 		};
+	}
+
+	runInGnome { | shell = "sh" |
+		if("which gnome-terminal".unixCmdGetStdOut!=""){
+			("gnome-terminal -- "+shell+" -i -c "+this.shellQuote).unixCmd;
+			^true;
+		} { ^false };
+	}
+
+	compileFile {
+		if(this.exists){
+			^thisProcess.interpreter.compileFile(this);
+		}{ ^nil };
 	}
 	//I just copied these methods from PathName...
 	noEndNumbers {
@@ -32,17 +37,8 @@
 		});
 		^index
 	}
+}
 
-	runInGnome { | shell = "sh" |
-		if("which gnome-terminal".unixCmdGetStdOut!=""){
-			("gnome-terminal -- "+shell+" -i -c "+this.shellQuote).unixCmd;
-			^true;
-		} { ^false };
-	}
-
-	compileFile {
-		if(this.exists){
-			^thisProcess.interpreter.compileFile(this);
-		}{ ^nil };
-	}
++ Symbol {
+	endNumber { ^this.asString.endNumber }
 }

@@ -8,9 +8,8 @@
 	}
 }
 
-+ PathName{
++ PathName {
 	getPaths {
-		var entries;
 		if(this.isFile, {
 			^[fullPath];
 		});
@@ -21,13 +20,13 @@
 + Collection {
 	getPaths {
 		var strings = [];
-		this.do{ | item, index |
+		this.do { | item, index |
 			strings = strings++item.getPaths;
 		};
-		^strings.as(this.class);
+		^strings;
 	}
 }
 
 + Object {
-	getPaths{ ^nil }
+	getPaths { ^nil }
 }
