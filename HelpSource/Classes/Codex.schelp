@@ -5,7 +5,7 @@ related::Guides/Codex
 keyword::codex
 
 DESCRIPTION::
-Codex establishes a workflow for both developing and interacting with objects that are comprised of interconnected scriptable modules. The class manages the directory of all of its subclasses' modules, providing a simple interface for loading, unloading, cloning, and generating modules from link::Classes/CodexTemplater##templates::.
+Codex establishes a framework for both developing classes that are comprised of interconnected scriptable modules. The class manages the directory of all of its subclasses' modules, providing a simple interface for loading, unloading, cloning, and generating modules from link::Classes/CodexTemplater##templates::.
 
 note::Codex should not be instantiated. Rather, it is meant to encapsulate behaviors on behalf of its subclasses. So instance those instead.
 ::

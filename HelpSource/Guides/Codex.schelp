@@ -7,11 +7,11 @@ keyword::codex, codices
 section::Description
 The Codex quark establishes a framework for developing class interfaces that use arbitrarily defined scriptable modules. For instance, a class written in this framework that iteratively evaluates a function within a routine might implement only the routine, leaving the function itself to be defined later by the user. As a result, an object of this class can support any number of diverse configurations without compromising the functionality of the class itself.
 
-The framework aims to support a best-of-both-worlds situation that balances the specficity of a compiled class's interface with the open-ended potential of scripting. link::Classes/Codex:: coordinates these operations on behalf of its subclasses and maintains the directory of modules.
+The framework aims to support a best-of-both-worlds situation that balances the specificity of a compiled class's interface with the open-ended potential of scripting. link::Classes/Codex:: coordinates these operations on behalf of its subclasses and maintains a central directory of modules.
 
 section::Managing modules
 
-Each class that inherits from Codex will have its modules stored in a central directory on the machine. The modules themselves are organized in layers of subfolders that are specified on a per-class-per-collection basis. The path to the directory can be gotten and set through link::Classes/Codex#*directory::. If the path to the directory of modules is reset, the new configuration will persist across sessions of the link::Classes/Interpreter::.
+Each class that inherits from Codex has its modules stored in Codex's directory of modules. The modules themselves are organized in layers of subfolders that are defined on a per-class-per-collection basis. The path to the directory can be gotten and set through link::Classes/Codex#*directory::. If the path to the directory of modules is reset, the new configuration will persist across sessions of the link::Classes/Interpreter::.
 
 note::Be sure to configure the path to the modules' directory. By default, the directory is stored in the folder of this quark.
 code::
@@ -51,31 +51,29 @@ tree::
 ::
 
 subsection::Class folders
-Class folders are generated automatically. However, the circumstances regarding when that happens vary. For instance, a class that contains references to preconfigured versions of its modules will create both its class folder when sclang is recompiled as well as subfolders populated with copies of these modules, and this process will be repeated if any of these folders are deleted. If no versions are specified, then once a class is instanced for the first time the framework will generate both the class folder and a folder of modules filled with templates.
+Class folders are generated automatically. However, the circumstances regarding when that happens vary. A class that contains references to preconfigured versions of its modules will create both its class folder and subfolders populated with copies of these modules when sclang is recompiled, and this process will be repeated if any of these folders are deleted. If no versions are specified, the framework will generate both the class folder and a folder of modules filled with templates when the class is instanced for the first time.
 
 subsection::Module folders
-Modules are stored as teletype::.scd:: files within the subfolders of each class folder; each of these subfolders contains variations of the modules templated by the class. A given class will expect that modules representing specific sclang objects exist but does not need to know emphasis::how:: they exist. The module loaded from the file teletype::default/sequence.scd:: can be different from the one loaded from the file teletype::experimental/sequence.scd:: so long as both scripts return an object of the same type.
+Modules are stored as teletype::.scd:: files within the subfolders of each class folder; each of these subfolders contains variations of the modules templated by the class. A given class will expect only that certain types of modules exist without needing to know emphasis::how:: they exist. For instance, a module loaded from the file teletype::default/sequence.scd:: can be different from the one loaded from the file teletype::experimental/sequence.scd:: so long as both scripts return the same type of object.
 
-There is no prescribed limit to the number of modular variations that can exist per class. An instance of a subclass of Codex is told to load one of these variatoins either by supplying a symbol to the teletype::moduleSet:: argument of link::Classes/Codex#*new:: or by setting the value of the field link::Classes/Codex#-moduleSet::.
+There is no prescribed limit to the number of modular variations that can exist per class. An instance of a subclass of Codex is told to load one of these variations either by supplying a symbol to the teletype::moduleSet:: argument of link::Classes/Codex#*new:: or by setting the value of the field link::Classes/Codex#-moduleSet::.
 note::To see all available module sets for a given class, use the method link::Classes/Codex#*moduleSets#*moduleSets::.::
 In both cases, the user has an opportunity to point to a different set of modules by supplying a second argument. If the first set of modules does not exist but the second set does, then the second set will be copied into the first. If the second set also does not exist, both sets will be generated from templates.
 
 subsection::Modules
-When a set of modules is requested for the first time, its associated scripts will be compiled as functions and stored in a cache maintained by Codex. Subsequently, these functions will be evaluated and returned to each instance that is requesting modules (see link::Classes/CodexModules::).
-
-If the source file a module is edited (and saved), calling link::Classes/Codex#-reloadScripts:: will reload the scripts into the cache before evaluating/copying them into the instance that called the method.
-If multiple instances of the class using the same moduleSet exist, their modules can then be updated using the method link::Classes/Codex#-reloadModules::.
-This process does not require recompiling sclang.
+When an instance requests a set of modules for the first time, the modules' associated scripts will be compiled, executed, and stored in a cache maintained by Codex before being copied into the instance making the request (see link::Classes/CodexModules::). If the source file of a module is edited (and saved), calling link::Classes/Codex#-reloadScripts:: will reload the scripts into the cache before evaluating/copying them into the instance that called the method.
+If multiple instances of the class using the same set exist, then their modules can then be updated using the method link::Classes/Codex#-reloadModules::.
+Because this process does not require recompiling sclang, it allows for quickly prototying new behaviors for each Codex-derived class.
 
 subsection::SynthDef names
-Codex pays special attention to link::Classes/SynthDef:: modules, specifically managing their names to prevent one set of modules from overwriting the SynthDef from another set. For this reason, it is best not to use the method link::Classes/SynthDef#add#.add:: or link::Classes/SynthDef#send#.send:: or whatever else when defining the module. Let Codex do that for you!
+Codex pays special attention to link::Classes/SynthDef:: modules, managing their names to prevent one set of modules from overwriting the SynthDef from another set. For this reason, it is best not to use the methods link::Classes/SynthDef#add#.add::, link::Classes/SynthDef#send#.send::, or link::Classes/SynthDef#store#.store:: when defining the module. Let Codex do that for you!
 
-SynthDefs are renamed in the following format: teletype::\ClassName_moduleSet_originalName::. For instance, if a SynthDef is called "earth" in a set "milkyWay" for the hypothetical class "Universe," then Codex will rename that SynthDef to teletype::\Universe_milkyWay_earth.:: If that module set is then cloned into a new one called "andromeda," its SynthDef would be renamed to teletype::\Universe_andromeda_earth::.
+SynthDefs are renamed in the following format: teletype::\ClassName_moduleSet_originalName::. For instance, if a SynthDef is called "earth" in a set "milkyWay" for the hypothetical class "Universe," then Codex will rename that SynthDef to teletype::\Universe_milkyWay_earth.:: If that set set is then cloned into a new one called "andromeda," its SynthDef would be renamed to teletype::\Universe_andromeda_earth::.
 
 
 subsection::Contributing versions of modules.
 Codex supports the ability to ship any of its subclasses with sets of preconfigured modules. This is done by overwriting the method link::Classes/Codex#*contribute#*contribute::, which is passed a link::Classes/Dictionary:: as an argument.
-Folder paths added to this dictionary will copy their contents to the relevant folders when sclang is recompiled. These modules can then be accessed using the same key that was originally supplied to the dictionary.
+Folder paths added to this dictionary will copy their contents to the directory of modules when sclang is recompiled. These modules can then be accessed using the same key that was originally supplied to the dictionary.
 
 If you want to contribute modules you've developed to a project/quark that uses the Codex framework, there are five short steps for doing so:
 
@@ -134,7 +132,7 @@ CodexExample : Codex {
 ::
 
 subsection::Usage
-Below represents code for interacting with the class whose implementation is displayed immediately above.
+Below represents code for interacting with CodexExample.
 code::
 //Instance CodexExample using the moduleSet 'example'.
 x = CodexExample.new(\example);
@@ -197,5 +195,22 @@ x.openModules;
 ::
 
 section::But wait! There's more!
-
-For more classes and frameworks that are based on the procedures outlined in this guide, check out the following link::https://github.com/ianmacdougald/Codices##quark::. It is made up of still-in-the-works tools for composing electronic music, quickly fabricating composite GUIs, making virtual instruments, and more!
+Below is a list of other quarks that use Codex. 
+definitionlist::
+##link::https://github.com/ianmacdougald/Codices##Codices::
+||A bunch of classes and subframeworks of Codex.  
+	list::
+	##CodexSingelton implements a class-only interface for Codex.
+	##CodexProxier sequences entire scripts within a link::Classes/ProxySpace::.
+	##CodexSonata inherits from CodexProxier, adding a timing control. 
+	##CodexInstrument uses the modular interface to control link::Classes/Synth:: objects. 
+	##CodexGuiKit defines, stores, and recalls customized gui elements. 
+	##CodexPanel acts as a generic gui for Codex-derived classes.
+	::
+##link::https://github.com/ianmacdougald/Raptor##Raptor::
+||An iterative pattern renderer, which renders patterns in non-realtime. 
+##link::https://github.com/ianmacdougald/TippyTaps##TippyTaps::
+||A crude keyboard-based instrument
+##link::https://github.com/ianmacdougald/GenOrg##GenOrg::
+||A (broken) library for making generative music inspired by genetic algorithms.
+::

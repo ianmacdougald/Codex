@@ -18,10 +18,7 @@ Codex {
 			);
 		};
 		cache = Dictionary.new;
-		this.allSubclasses.do({ | class |
-			Class.initClassTree(class);
-			class.copyVersions;
-		});
+		this.subclasses.do(_.copyVersions);
 	}
 
 	*new { | moduleSet, from |
@@ -51,7 +48,6 @@ Codex {
 					this.makeTemplates(CodexTemplater(path));
 					this.loadScripts(set);
 				} {
-					//Initializing a second time will rename and readd the SynthDefs
 					dict.add(set -> this.loadModules(from)
 						.initialize(this.name++"_"++set++"_"));
 					fork { (this.classFolder+/+from).copyScriptsTo(path) };
@@ -193,8 +189,8 @@ Codex {
 					^modules[selector.asGetter] = args[0];
 				}, {
 					warn(
-						"Can only overwrite pseudo-variable"
-						++"with object of the same type."
+						"Can only overwrite pseudo-variable module"
+						++" with object of the same type."
 					);
 					^this;
 				});
@@ -219,15 +215,10 @@ CodexModules : Environment {
 	compileFolder { | folder |
 		folder !? {
 			PathName(folder).files.do { | file |
-				file = file.fullPath;
-				this.add(this.getKeyFrom(file) -> file.compileFile);
+				var key = file.fileName[0].toLower++file.fileNameWithoutExtension[1..];
+				this.add(key.asSymbol -> file.fullPath.compileFile);
 			};
 		}
-	}
-
-	getKeyFrom { | input |
-		var string = PathName(input).fileNameWithoutExtension;
-		^(string[0].toLower++string[1..]).asSymbol;
 	}
 
 	add { | anAssociation |
