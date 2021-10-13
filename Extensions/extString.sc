@@ -1,14 +1,6 @@
 + String {
 	exists { ^this.pathMatch.isEmpty.not }
 
-	increment {
-		var path = PathName(this);
-		^CodexIncrementer(
-			path.fileName,
-			path.pathOnly
-		).increment;
-	}
-
 	copyScriptsTo { | newDirectory |
 		this.getScripts.do { | path |
 			File.copy(path, newDirectory+/+PathName(path).fileName);
