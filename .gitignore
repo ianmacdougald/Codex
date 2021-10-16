@@ -1,3 +1,4 @@
 *.txt
 *.yaml
+*.DS_Store
 scmodules/*

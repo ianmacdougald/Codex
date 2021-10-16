@@ -21,7 +21,7 @@
 + Collection {
 	getPaths {
 		var strings = [];
-		this.do{ | item, index |
+		this.do { | item, index |
 			strings = strings++item.getPaths;
 		};
 		^strings.as(this.class);
@@ -29,5 +29,5 @@
 }
 
 + Object {
-	getPaths{ ^nil }
+	getPaths { ^nil }
 }
