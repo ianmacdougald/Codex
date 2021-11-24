@@ -246,7 +246,8 @@ CodexModules : Environment {
 				};
 				synthDef.name = (label++synthDef.metadata.name).asSymbol;
 			};
-			fork{
+
+			fork {
 				semaphore.wait;
 				synthDefs.do { | synthDef | synthDef.value.add };
 				semaphore.signal;
