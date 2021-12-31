@@ -33,6 +33,8 @@ Codex {
 		modules = this.class.loadModules(moduleSet, from);
 	}
 
+	*preload { | modules | }
+
 	*loadModules { | set, from |
 		var dict = this.cache ?? {
 			cache.add(this.name -> Dictionary.new)[this.name];
@@ -63,8 +65,11 @@ Codex {
 	*makeTemplates { | templater | }
 
 	*loadScripts { | set |
-		this.cache.add(set -> CodexModules(this.classFolder+/+set)
-			.initialize(this.name++"_"++set++"_"));
+		var modules = CodexModules(this.classFolder+/+set);
+		this.preload(modules);
+		modules.initialize(this.name++"_"++set++"_");
+
+		this.cache.add(set -> modules);
 	}
 
 	*copyVersions {
@@ -201,7 +206,7 @@ Codex {
 }
 
 CodexModules : Environment {
-	var semaphore;
+	var semaphore, synthDefArray;
 
 	*new { | folder |
 		^super.new.know_(true).initModules(folder);
@@ -235,10 +240,14 @@ CodexModules : Environment {
 	*object { ^CodexObject }
 
 	initialize { | label |
-		//Selecting SynthDefs will evaluate/replace modules.
-		var synthDefs = this.synthDefs;
-		if(synthDefs.isEmpty.not){
+		var synthDefs;
+		this.array.do(_.value);
+
+		synthDefs = this.getSynthDefs;
+
+		if(synthDefs.notEmpty){
 			synthDefs.do { | synthDef |
+
 				//Evaluate to get the SynthDef object.
 				synthDef = synthDef.value;
 				synthDef.metadata.name ?? {
@@ -256,23 +265,26 @@ CodexModules : Environment {
 	}
 
 	clear {
-		var synthDefs = this.synthDefs;
-		if(synthDefs.isEmpty.not){
-			fork{
+		if (synthDefArray.notEmpty) {
+			fork {
 				semaphore.wait;
-				synthDefs.do { | synthDef |
+				synthDefArray.do { | synthDef |
 					SynthDef.removeAt(synthDef.value.name);
 				};
 				semaphore.signal;
-			}
+			};
 		};
+		synthDefArray = nil;
 		super.clear;
 	}
 
-	synthDefs {
-		^this.array.select { | object |
-			object.value.isKindOf(SynthDef);
-		}
+	getSynthDefs {
+		synthDefArray ?? {
+			synthDefArray = this.array.flat.select({ | object |
+				object.isKindOf(SynthDef);
+			});
+		};
+		^synthDefArray;
 	}
 }
 
