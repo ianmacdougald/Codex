@@ -298,7 +298,7 @@ CodexObject {
 	value { | ... args |
 		^envir.use({
 			if(envir[key].isNil or: { envir[key]==this }){
-				envir[key] = function.value(*args);
+				envir[key] = function.value(*args) ? this;
 			};
 			envir[key];
 		});
