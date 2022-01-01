@@ -223,11 +223,16 @@ CodexModules : Environment {
 
 	compileFolder { | folder |
 		folder !? {
-			PathName(folder).files.do { | file |
-				var key = file.fileName[0].toLower++file.fileNameWithoutExtension[1..];
-				this.add(key.asSymbol -> file.fullPath.compileFile);
+			folder.getScripts.do { | file |
+				var path, key;
+
+				path = PathName(file);
+				key = path.fileName[0].toLower
+				++ path.fileNameWithoutExtension[1..];
+
+				this.add(key.asSymbol -> file.compileFile);
 			};
-		}
+		};
 	}
 
 	add { | anAssociation |
