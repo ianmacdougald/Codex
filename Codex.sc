@@ -120,20 +120,20 @@ Codex {
 	open { | ... keys |
 		var ide = Platform.ideName;
 		case
-		{ ide=="scqt" }{ this.open_scqt(*keys) }
+		{ ide=="scqt" }{ this.openSCQt(*keys) }
 		{ ide=="scnvim" }{
 			var shell = "echo $SHELL".unixCmdGetStdOut.split($/).last;
 			shell = shell[..(shell.size - 2)];
-			this.open_scvim(shell, true, true, keys: keys);
+			this.openSCVim(shell, true, true, keys: keys);
 		}
 		{ ide=="scvim" }{
 			var shell = "echo $SHELL".unixCmdGetStdOut.split($/).last;
 			shell = shell[..(shell.size - 2)];
-			this.open_scvim(shell, false, true, keys: keys);
+			this.openSCVim(shell, false, true, keys: keys);
 		};
 	}
 
-	open_scqt { | ... keys |
+	openSCQt { | ... keys |
 		var document = \Document.asClass;
 		if(document.notNil, {
 			keys.do{ | item |
@@ -145,7 +145,7 @@ Codex {
 		});
 	}
 
-	open_scvim { | shell("sh"), neovim(false), vertically(false) ... keys |
+	openSCVim { | shell("sh"), neovim(false), vertically(false) ... keys |
 		var cmd = "vim", paths = "";
 		keys.do({ | key |
 			var current = this.moduleFolder+/+key.asString++".scd";
