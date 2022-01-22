@@ -36,24 +36,31 @@ Codex {
 	*preload { | modules | }
 
 	*loadModules { | set, from |
-		var dict = this.cache ?? {
-			cache.add(this.name -> Dictionary.new)[this.name];
+		var dict, path;
+
+		dict = this.cache ?? {
+			var classCache = Dictionary.new;
+			cache.add(this.name -> classCache);
+			classCache;
 		};
-		var path = this.classFolder+/+set;
+
+		path = this.classFolder+/+set;
 
 		dict[set] ?? {
-			if(path.exists){
+			if (path.exists) {
 				this.loadScripts(set);
-			} {
+			} /* else */ {
 				path.mkdir;
-				if(from.isNil){
+				if (from.isNil) {
 					this.makeTemplates(CodexTemplater(path));
 					this.loadScripts(set);
-				} {
-					dict.add(set -> this.loadModules(from)
-						.initialize(this.name++"_"++set++"_"));
+				} /* else */ {
+					var modules = this.loadModules(from)
+					.initialize(this.name++"_"++set++"_");
+
+					dict.add(set -> modules);
 					fork { (this.classFolder+/+from).copyScriptsTo(path) };
-				}
+				};
 			};
 		};
 
@@ -135,28 +142,43 @@ Codex {
 
 	openSCQt { | ... keys |
 		var document = \Document.asClass;
-		if(document.notNil, {
+		if(document.notNil) {
+
 			keys.do{ | item |
 				var file = this.moduleFolder+/+item.asString++".scd";
-				if(File.exists(file), {
+				if (File.exists(file)) {
 					document.perform(\open, file);
-				});
+				};
 			};
-		});
+
+		};
 	}
 
 	openSCVim { | shell("sh"), neovim(false), vertically(false) ... keys |
 		var cmd = "vim", paths = "";
-		keys.do({ | key |
+
+		keys.do { | key |
 			var current = this.moduleFolder+/+key.asString++".scd";
-			if(File.exists(current)){
+			if (File.exists(current)) {
 				paths = paths++current++" ";
 			};
-		});
-		if(neovim, { cmd = $n++cmd });
-		if(vertically, { cmd = cmd++" -o "}, { cmd = cmd++" -O " });
-		paths.do{ | path | cmd=cmd++path };
-		if(cmd.runInGnome(shell).not){
+		};
+
+		if (neovim) {
+			cmd = $n++cmd;
+		};
+
+		if (vertically) {
+			cmd = cmd ++ " -o ";
+		} /* else */ {
+			cmd = cmd ++ " -O ";
+		};
+
+		paths.do { | path |
+			cmd = cmd ++ path;
+		};
+
+		if (cmd.runInGnome(shell).not) {
 			cmd.runInTerminal(shell);
 		};
 	}
@@ -164,24 +186,25 @@ Codex {
 	openModules { this.open(keys: modules.keys.asArray.sort) }
 
 	closeModules {
-		if(Platform.ideName=="scqt", {
+		if(Platform.ideName=="scqt") {
 			var document = \Document.asClass;
-			if(document.notNil, {
+			if(document.notNil) {
 				document.perform(\allDocuments).do { | doc, index |
-					if(doc.dir==this.moduleFolder, {
+					if(doc.dir==this.moduleFolder) {
 						doc.close;
-					});
-				}
-			});
-		})
+					};
+				};
+			};
+		};
 	}
 
 	*cache { ^cache.at(this.name) }
 	*clearCache { cache.removeAt(this.name).clear }
 
 	doesNotUnderstand { | selector ... args |
-		if(know, {
+		if(know) {
 			var module = modules[selector];
+
 			module !? {
 				^module.functionPerformList(
 					\value,
@@ -189,18 +212,20 @@ Codex {
 					args
 				);
 			};
-			if(selector.isSetter, {
-				if(args[0].isKindOf(modules[selector.asGetter].class), {
+
+			if(selector.isSetter) {
+				if(args[0].isKindOf(modules[selector.asGetter].class)) {
 					^modules[selector.asGetter] = args[0];
-				}, {
+				} /* else */{
 					warn(
 						"Can only overwrite pseudo-variable module"
 						++" with object of the same type."
 					);
 					^this;
-				});
-			});
-		});
+				};
+			};
+		};
+
 		^this.superPerformList(\doesNotUnderstand, selector, args);
 	}
 
@@ -210,7 +235,7 @@ Codex {
 }
 
 CodexModules : Environment {
-	var semaphore, synthDefArray;
+	var semaphore, synthDefArr;
 
 	*new { | folder |
 		^super.new.know_(true).initModules(folder);
@@ -238,7 +263,7 @@ CodexModules : Environment {
 	add { | anAssociation |
 		this.put(
 			anAssociation.key,
-			this.class.object.new(
+			CodexObject.new(
 				anAssociation.key,
 				anAssociation.value,
 				this
@@ -246,54 +271,71 @@ CodexModules : Environment {
 		);
 	}
 
-	*object { ^CodexObject }
-
 	initialize { | label |
 		var synthDefs;
-		this.array.do(_.value);
 
-		synthDefs = this.getSynthDefs;
+		synthDefArr = this.getSynthDefs;
 
-		if(synthDefs.notEmpty){
-			synthDefs.do { | synthDef |
-
-				//Evaluate to get the SynthDef object.
-				synthDef = synthDef.value;
-				synthDef.metadata.name ?? {
-					synthDef.metadata.name = synthDef.name;
+		this.array.do { | object |
+			object = object.value;
+			if (object.isKindOf(SynthDef)) {
+				synthDefArr = synthDefArr.add(object);
+				object.metadata.name ?? {
+					object.metadata.name = object.name;
 				};
-				synthDef.name = (label++synthDef.metadata.name).asSymbol;
-			};
-
-			fork {
-				semaphore.wait;
-				synthDefs.do { | synthDef | synthDef.value.add };
-				semaphore.signal;
-			}
-		}
-	}
-
-	clear {
-		if (synthDefArray.notEmpty) {
-			fork {
-				semaphore.wait;
-				synthDefArray.do { | synthDef |
-					SynthDef.removeAt(synthDef.value.name);
-				};
-				semaphore.signal;
+				object.name = (label++object.metadata.name).asSymbol;
 			};
 		};
-		synthDefArray = nil;
-		super.clear;
+
+		this.addSynthDefs;
+	}
+
+	addSynthDefs {
+		fork {
+			semaphore.wait;
+			synthDefArr.do { | synthDef | synthDef.value.add };
+			semaphore.signal;
+		};
+	}
+
+	removeSynthDefs {
+		fork {
+			semaphore.wait;
+			synthDefArr.do { | synthDef |
+				SynthDef.removeAt(synthDef.value.name);
+			};
+			semaphore.signal;
+		};
 	}
 
 	getSynthDefs {
-		synthDefArray ?? {
-			synthDefArray = this.array.flat.select({ | object |
-				object.isKindOf(SynthDef);
-			});
+		^synthDefArr ? [];
+	}
+
+	findSynthDefs {
+		synthDefArr = this.array.select { | object |
+			object.isKindOf(SynthDef);
 		};
-		^synthDefArray;
+		^synthDefArr;
+	}
+
+	tagSynthDefs { | label |
+		this.findSynthDefs.do { | synthDef |
+			synthDef.metadata.name ?? {
+				synthDef.metadata.name = synthDef.name;
+			};
+			synthDef.name = (label++synthDef.metadata.name).asSymbol;
+		};
+
+		this.addSynthDefs;
+	}
+
+	clear {
+		if (synthDefArr.notEmpty) {
+			this.removeSynthDefs;
+		};
+		synthDefArr = nil;
+		super.clear;
 	}
 }
 
@@ -303,6 +345,8 @@ CodexObject {
 	*new { | key, function, envir |
 		^super.newCopyArgs(key, function, envir);
 	}
+
+	check { | ... args | ^function.value(*args) }
 
 	value { | ... args |
 		^envir.use({
