@@ -46,14 +46,16 @@ Codex {
 				this.loadScripts(set);
 			} {
 				path.mkdir;
-				if(from.isNil){
+				if (from.isNil) {
 					this.makeTemplates(CodexTemplater(path));
 					this.loadScripts(set);
 				} {
-					dict.add(set -> this.loadModules(from)
-						.initialize(this.name++"_"++set++"_"));
+					var modules = this.loadModules(from)
+					.initialize(this.name++"_"++set++"_");
+
+					dict.add(set -> modules);
 					fork { (this.classFolder+/+from).copyScriptsTo(path) };
-				}
+				};
 			};
 		};
 
@@ -173,7 +175,7 @@ Codex {
 					});
 				}
 			});
-		})
+		});
 	}
 
 	*cache { ^cache.at(this.name) }
@@ -210,7 +212,7 @@ Codex {
 }
 
 CodexModules : Environment {
-	var semaphore, synthDefArray;
+	var semaphore, synthDefArr;
 
 	*new { | folder |
 		^super.new.know_(true).initModules(folder);
@@ -238,7 +240,7 @@ CodexModules : Environment {
 	add { | anAssociation |
 		this.put(
 			anAssociation.key,
-			this.class.object.new(
+			CodexObject.new(
 				anAssociation.key,
 				anAssociation.value,
 				this
@@ -246,54 +248,71 @@ CodexModules : Environment {
 		);
 	}
 
-	*object { ^CodexObject }
-
 	initialize { | label |
 		var synthDefs;
-		this.array.do(_.value);
 
-		synthDefs = this.getSynthDefs;
+		synthDefArr = this.getSynthDefs;
 
-		if(synthDefs.notEmpty){
-			synthDefs.do { | synthDef |
-
-				//Evaluate to get the SynthDef object.
-				synthDef = synthDef.value;
-				synthDef.metadata.name ?? {
-					synthDef.metadata.name = synthDef.name;
+		this.array.do { | object |
+			object = object.value;
+			if (object.isKindOf(SynthDef)) {
+				synthDefArr = synthDefArr.add(object);
+				object.metadata.name ?? {
+					object.metadata.name = object.name;
 				};
-				synthDef.name = (label++synthDef.metadata.name).asSymbol;
-			};
-
-			fork {
-				semaphore.wait;
-				synthDefs.do { | synthDef | synthDef.value.add };
-				semaphore.signal;
-			}
-		}
-	}
-
-	clear {
-		if (synthDefArray.notEmpty) {
-			fork {
-				semaphore.wait;
-				synthDefArray.do { | synthDef |
-					SynthDef.removeAt(synthDef.value.name);
-				};
-				semaphore.signal;
+				object.name = (label++object.metadata.name).asSymbol;
 			};
 		};
-		synthDefArray = nil;
-		super.clear;
+
+		this.addSynthDefs;
+	}
+
+	addSynthDefs {
+		fork {
+			semaphore.wait;
+			synthDefArr.do { | synthDef | synthDef.value.add };
+			semaphore.signal;
+		};
+	}
+
+	removeSynthDefs {
+		fork {
+			semaphore.wait;
+			synthDefArr.do { | synthDef |
+				SynthDef.removeAt(synthDef.value.name);
+			};
+			semaphore.signal;
+		};
 	}
 
 	getSynthDefs {
-		synthDefArray ?? {
-			synthDefArray = this.array.flat.select({ | object |
-				object.isKindOf(SynthDef);
-			});
+		^synthDefArr ? [];
+	}
+
+	findSynthDefs {
+		synthDefArr = this.array.select { | object |
+			object.isKindOf(SynthDef);
 		};
-		^synthDefArray;
+		^synthDefArr;
+	}
+
+	tagSynthDefs { | label |
+		this.findSynthDefs.do { | synthDef |
+			synthDef.metadata.name ?? {
+				synthDef.metadata.name = synthDef.name;
+			};
+			synthDef.name = (label++synthDef.metadata.name).asSymbol;
+		};
+
+		this.addSynthDefs;
+	}
+
+	clear {
+		if (synthDefArr.notEmpty) {
+			this.removeSynthDefs;
+		};
+		synthDefArr = nil;
+		super.clear;
 	}
 }
 
@@ -303,6 +322,8 @@ CodexObject {
 	*new { | key, function, envir |
 		^super.newCopyArgs(key, function, envir);
 	}
+
+	check { | ... args | ^function.value(*args) }
 
 	value { | ... args |
 		^envir.use({
