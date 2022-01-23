@@ -36,20 +36,25 @@ Codex {
 	*preload { | modules | }
 
 	*loadModules { | set, from |
-		var dict = this.cache ?? {
-			cache.add(this.name -> Dictionary.new)[this.name];
+		var dict, path;
+
+		dict = this.cache ?? {
+			var classCache = Dictionary.new;
+			cache.add(this.name -> classCache);
+			classCache;
 		};
-		var path = this.classFolder+/+set;
+
+		path = this.classFolder+/+set;
 
 		dict[set] ?? {
-			if(path.exists){
+			if (path.exists) {
 				this.loadScripts(set);
-			} {
+			} /* else */ {
 				path.mkdir;
 				if (from.isNil) {
 					this.makeTemplates(CodexTemplater(path));
 					this.loadScripts(set);
-				} {
+				} /* else */ {
 					var modules = this.loadModules(from)
 					.initialize(this.name++"_"++set++"_");
 
@@ -137,28 +142,43 @@ Codex {
 
 	openSCQt { | ... keys |
 		var document = \Document.asClass;
-		if(document.notNil, {
+		if(document.notNil) {
+
 			keys.do{ | item |
 				var file = this.moduleFolder+/+item.asString++".scd";
-				if(File.exists(file), {
+				if (File.exists(file)) {
 					document.perform(\open, file);
-				});
+				};
 			};
-		});
+
+		};
 	}
 
 	openSCVim { | shell("sh"), neovim(false), vertically(false) ... keys |
 		var cmd = "vim", paths = "";
-		keys.do({ | key |
+
+		keys.do { | key |
 			var current = this.moduleFolder+/+key.asString++".scd";
-			if(File.exists(current)){
+			if (File.exists(current)) {
 				paths = paths++current++" ";
 			};
-		});
-		if(neovim, { cmd = $n++cmd });
-		if(vertically, { cmd = cmd++" -o "}, { cmd = cmd++" -O " });
-		paths.do{ | path | cmd=cmd++path };
-		if(cmd.runInGnome(shell).not){
+		};
+
+		if (neovim) {
+			cmd = $n++cmd;
+		};
+
+		if (vertically) {
+			cmd = cmd ++ " -o ";
+		} /* else */ {
+			cmd = cmd ++ " -O ";
+		};
+
+		paths.do { | path |
+			cmd = cmd ++ path;
+		};
+
+		if (cmd.runInGnome(shell).not) {
 			cmd.runInTerminal(shell);
 		};
 	}
@@ -166,24 +186,25 @@ Codex {
 	openModules { this.open(keys: modules.keys.asArray.sort) }
 
 	closeModules {
-		if(Platform.ideName=="scqt", {
+		if(Platform.ideName=="scqt") {
 			var document = \Document.asClass;
-			if(document.notNil, {
+			if(document.notNil) {
 				document.perform(\allDocuments).do { | doc, index |
-					if(doc.dir==this.moduleFolder, {
+					if(doc.dir==this.moduleFolder) {
 						doc.close;
-					});
-				}
-			});
-		});
+					};
+				};
+			};
+		};
 	}
 
 	*cache { ^cache.at(this.name) }
 	*clearCache { cache.removeAt(this.name).clear }
 
 	doesNotUnderstand { | selector ... args |
-		if(know, {
+		if(know) {
 			var module = modules[selector];
+
 			module !? {
 				^module.functionPerformList(
 					\value,
@@ -191,18 +212,20 @@ Codex {
 					args
 				);
 			};
-			if(selector.isSetter, {
-				if(args[0].isKindOf(modules[selector.asGetter].class), {
+
+			if(selector.isSetter) {
+				if(args[0].isKindOf(modules[selector.asGetter].class)) {
 					^modules[selector.asGetter] = args[0];
-				}, {
+				} /* else */{
 					warn(
 						"Can only overwrite pseudo-variable module"
 						++" with object of the same type."
 					);
 					^this;
-				});
-			});
-		});
+				};
+			};
+		};
+
 		^this.superPerformList(\doesNotUnderstand, selector, args);
 	}
 
