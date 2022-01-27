@@ -108,7 +108,10 @@ Codex {
 		this.reloadModules;
 	}
 
-	removeModules { this.class.cache.removeAt(moduleSet) }
+	removeModules {
+		this.class.cache.removeAt(moduleSet)
+		.removeSynthDefs;
+	}
 
 	*moduleSets {
 		^PathName(this.classFolder).folders
@@ -276,7 +279,7 @@ CodexModules : Environment {
 
 		synthDefArr = this.getSynthDefs;
 
-		this.array.do { | object |
+		this.array.copy.do { | object |
 			object = object.value;
 			if (object.isKindOf(SynthDef)) {
 				synthDefArr = synthDefArr.add(object);
@@ -293,7 +296,7 @@ CodexModules : Environment {
 	addSynthDefs {
 		fork {
 			semaphore.wait;
-			synthDefArr.do { | synthDef | synthDef.value.add };
+			synthDefArr.do { | synthDef | synthDef.add };
 			semaphore.signal;
 		};
 	}
