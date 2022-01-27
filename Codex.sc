@@ -279,14 +279,17 @@ CodexModules : Environment {
 
 		synthDefArr = this.getSynthDefs;
 
-		this.array.copy.do { | object |
-			object = object.value;
-			if (object.isKindOf(SynthDef)) {
-				synthDefArr = synthDefArr.add(object);
-				object.metadata.name ?? {
-					object.metadata.name = object.name;
+		this.use {
+			this.array.copy.do { | object |
+				try { object = object.check };
+
+				if (object.isKindOf(SynthDef)) {
+					synthDefArr = synthDefArr.add(object);
+					object.metadata.name ?? {
+						object.metadata.name = object.name;
+					};
+					object.name = (label++object.metadata.name).asSymbol;
 				};
-				object.name = (label++object.metadata.name).asSymbol;
 			};
 		};
 
@@ -344,21 +347,30 @@ CodexModules : Environment {
 
 CodexObject {
 	var <>key, <>function, <>envir;
+	var evalFunc;
 
 	*new { | key, function, envir |
-		^super.newCopyArgs(key, function, envir);
+		^super.newCopyArgs(key, function, envir).initEval;
 	}
 
-	check { | ... args | ^function.value(*args) }
-
-	value { | ... args |
-		^envir.use({
-			if(envir[key].isNil or: { envir[key]==this }){
-				envir[key] = function.value(*args) ? this;
+	initEval {
+		evalFunc = { | ... args |
+			if (envir[key]==this || envir[key].isNil) {
+				envir[key] = envir.use { function.valueEnvir(*args) } ?? {
+					envir = currentEnvironment;
+					evalFunc = { | ... args |
+						envir.use { function.valueEnvir(*args) };
+					};
+					this;
+				};
 			};
 			envir[key];
-		});
+		};
 	}
+
+	check { | ... args | ^this.value(*args) }
+
+	value { | ... args | ^evalFunc.value(*args) }
 
 	doesNotUnderstand { | selector ... args |
 		^try { this.value(selector, *args).perform(selector, *args) }
