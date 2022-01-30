@@ -185,9 +185,9 @@ Codex {
 		};
 	}
 
-	openModules { this.open(keys: modules.keys.asArray.sort) }
+	openScripts { this.open(keys: modules.keys.asArray.sort) }
 
-	closeModules {
+	closeScripts {
 		if(Platform.ideName=="scqt") {
 			var document = \Document.asClass;
 			if(document.notNil) {
