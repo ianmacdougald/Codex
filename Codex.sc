@@ -37,6 +37,7 @@ Codex {
 
 	*loadModules { | set, from |
 		var dict, path;
+		var modules;
 
 		dict = this.cache ?? {
 			var classCache = Dictionary.new;
@@ -55,16 +56,17 @@ Codex {
 					this.makeTemplates(CodexTemplater(path));
 					this.loadScripts(set);
 				} /* else */ {
-					var modules = this.loadModules(from)
-					.initialize(this.name++"_"++set++"_");
+					dict.add(set -> this.loadModules(from)
+						.initialize(this.name++"_"++set++"_"));
 
-					dict.add(set -> modules);
 					fork { (this.classFolder+/+from).copyScriptsTo(path) };
 				};
 			};
 		};
 
-		^dict[set].deepCopy;
+		modules = dict[set].deepCopy;
+		this.preload(modules);
+		^modules;
 	}
 
 	*classFolder { ^(this.directory+/+this.name) }
@@ -72,11 +74,8 @@ Codex {
 	*makeTemplates { | templater | }
 
 	*loadScripts { | set |
-		var modules = CodexModules(this.classFolder+/+set);
-		this.preload(modules);
-		modules.initialize(this.name++"_"++set++"_");
-
-		this.cache.add(set -> modules);
+		this.cache.add(set -> CodexModules(this.classFolder+/+set)
+			.initialize(this.name++"_"++set++"_"));
 	}
 
 	*copyVersions {
