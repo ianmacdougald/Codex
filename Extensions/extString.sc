@@ -6,6 +6,19 @@
 			File.copy(path, newDirectory+/+PathName(path).fileName);
 		};
 	}
+
+	runInGnome { | shell = "sh" |
+		if("which gnome-terminal".unixCmdGetStdOut!=""){
+			("gnome-terminal -- "+shell+" -i -c "+this.shellQuote).unixCmd;
+			^true;
+		} { ^false };
+	}
+
+	compileFile {
+		if(this.exists){
+			^thisProcess.interpreter.compileFile(this);
+		}{ ^nil };
+	}
 	//I just copied these methods from PathName...
 	noEndNumbers {
 		^this[..this.endNumberIndex]
@@ -24,17 +37,8 @@
 		});
 		^index
 	}
+}
 
-	runInGnome { | shell = "sh" |
-		if("which gnome-terminal".unixCmdGetStdOut!=""){
-			("gnome-terminal -- "+shell+" -i -c "+this.shellQuote).unixCmd;
-			^true;
-		} { ^false };
-	}
-
-	compileFile {
-		if(this.exists){
-			^thisProcess.interpreter.compileFile(this);
-		}{ ^nil };
-	}
++ Symbol {
+	endNumber { ^this.asString.endNumber }
 }
