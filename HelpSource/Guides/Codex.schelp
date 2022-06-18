@@ -5,9 +5,15 @@ related::Classes/Codex, Classes/CodexTemplater, Classes/CodexModules, Classes/Co
 keyword::codex, codices
 
 section::Description
-The Codex quark establishes a framework for developing class interfaces that use arbitrarily defined scriptable modules. For instance, a class written in this framework that iteratively evaluates a function within a routine might implement only the routine, leaving the function itself to be defined later by the user. As a result, an object of this class can support any number of diverse configurations without compromising the functionality of the class itself.
+Codex establishes a framework for developing class interfaces that
+make use of scriptable modules. Its original purpose was to facilitate
+a mode of class-based music composition that allows for easy reuse of code: 
+scripted modules were to define the music making functions
+and data structures necessary for a specific composition while the instance of
+the class managing those
+modules could be used across works. 
 
-The framework aims to support a best-of-both-worlds situation that balances the specificity of a compiled class's interface with the open-ended potential of scripting. link::Classes/Codex:: coordinates these operations on behalf of its subclasses and maintains a central directory of modules.
+More generally, the framework aims to support a best-of-both-worlds situation that balances the specificity of a compiled class's interface with the open-ended potential of scripting. link::Classes/Codex:: coordinates these operations on behalf of its subclasses and maintains a central directory of modules.
 
 section::Managing modules
 
@@ -51,28 +57,41 @@ tree::
 ::
 
 subsection::Class folders
-Class folders are generated automatically. However, the circumstances regarding when that happens vary. A class that contains references to preconfigured versions of its modules will create both its class folder and subfolders populated with copies of these modules when sclang is recompiled, and this process will be repeated if any of these folders are deleted. If no versions are specified, the framework will generate both the class folder and a folder of modules filled with templates when the class is instanced for the first time.
+Class folders are generated automatically.  A class that contains references
+to predefined 
+versions of its modules will create both its class folder and subfolders filled
+with modules
+ when sclang is recompiled, and this process will be repeated if any of those
+ folders are deleted. If no predefined modules are specified, the framework will generate both the class folder and a folder of modules filled with templates when the class is instanced for the first time.
 
 subsection::Module folders
 Modules are stored as teletype::.scd:: files within the subfolders of each class folder; each of these subfolders contains variations of the modules templated by the class. A given class will expect only that certain types of modules exist without needing to know emphasis::how:: they exist. For instance, a module loaded from the file teletype::default/sequence.scd:: can be different from the one loaded from the file teletype::experimental/sequence.scd:: so long as both scripts return the same type of object.
 
 There is no prescribed limit to the number of modular variations that can exist per class. An instance of a subclass of Codex is told to load one of these variations either by supplying a symbol to the teletype::moduleSet:: argument of link::Classes/Codex#*new:: or by setting the value of the field link::Classes/Codex#-moduleSet::.
 note::To see all available module sets for a given class, use the method link::Classes/Codex#*moduleSets#*moduleSets::.::
-In both cases, the user has an opportunity to point to a different set of modules by supplying a second argument. If the first set of modules does not exist but the second set does, then the second set will be copied into the first. If the second set also does not exist, both sets will be generated from templates.
+In both cases, the user has an opportunity to point to a different set of
+modules by supplying a second argument. If the first set of modules does not
+exist but the second set does, then the second set will be copied into the
+first. If the second set also does not exist, both sets will be generated from
+templates (see link::Classes/CodexTemplater::).
 
 subsection::Modules
 When an instance requests a set of modules for the first time, the modules' associated scripts will be compiled, executed, and stored in a cache maintained by Codex before being copied into the instance making the request (see link::Classes/CodexModules::). If the source file of a module is edited (and saved), calling link::Classes/Codex#-reloadScripts:: will reload the scripts into the cache before evaluating/copying them into the instance that called the method.
-If multiple instances of the class using the same set exist, then their modules can then be updated using the method link::Classes/Codex#-reloadModules::.
+If multiple instances of the class using the same set exist, then their modules
+can then be updated using the method link::Classes/Codex#-reloadModules:: after
+link::Classes/Codex#-reloadScripts:: has been evaluated.
 Because this process does not require recompiling sclang, it allows for quickly prototying new behaviors for each Codex-derived class.
 
 subsection::SynthDef names
 Codex pays special attention to link::Classes/SynthDef:: modules, managing their names to prevent one set of modules from overwriting the SynthDef from another set. For this reason, it is best not to use the methods link::Classes/SynthDef#add#.add::, link::Classes/SynthDef#send#.send::, or link::Classes/SynthDef#store#.store:: when defining the module. Let Codex do that for you!
 
-SynthDefs are renamed in the following format: teletype::\ClassName_moduleSet_originalName::. For instance, if a SynthDef is called "earth" in a set "milkyWay" for the hypothetical class "Universe," then Codex will rename that SynthDef to teletype::\Universe_milkyWay_earth.:: If that set set is then cloned into a new one called "andromeda," its SynthDef would be renamed to teletype::\Universe_andromeda_earth::.
+SynthDefs are renamed in the following format:
+teletype::\ClassName_moduleSet_originalName::. For instance, if a SynthDef in a
+module is called "earth" in a set "milkyWay" for the hypothetical class "Universe," then Codex will rename that SynthDef to teletype::\Universe_milkyWay_earth.:: If that set is then cloned into a new one called "andromeda," its SynthDef would be renamed to teletype::\Universe_andromeda_earth::.
 
 
 subsection::Contributing versions of modules.
-Codex supports the ability to ship any of its subclasses with sets of preconfigured modules. This is done by overwriting the method link::Classes/Codex#*contribute#*contribute::, which is passed a link::Classes/Dictionary:: as an argument.
+Codex supports the ability to ship any of its subclasses with sets of predefined modules. This is done by overwriting the method link::Classes/Codex#*contribute#*contribute::, which is passed a link::Classes/Dictionary:: as an argument.
 Folder paths added to this dictionary will copy their contents to the directory of modules when sclang is recompiled. These modules can then be accessed using the same key that was originally supplied to the dictionary.
 
 If you want to contribute modules you've developed to a project/quark that uses the Codex framework, there are five short steps for doing so:
@@ -85,7 +104,8 @@ numberedlist::
 ##Submit a pull request for the project.
 ::
 
-By implementing this framework as a platform that publishes diverse approaches to common projects, my hope is to promote a collaborative music-making process that mirros the ethos of the libre/open-source software movements in which the SuperCollider project itself is developed. More information about how to contribute either to Codex-based projects or to SuperCollider can be found with the following link:
+In this way, Codex can act as a platform that publishes diverse approaches to
+common projects. By adding this feature, my hope is to promote a collaborative music-making process that mirros the ethos of the libre/open-source software movements in which the SuperCollider project itself is developed. More information about how to contribute either to Codex-based projects or to SuperCollider can be found with the following link:
 link::https://supercollider.github.io/contributing/::.
 
 
@@ -195,17 +215,15 @@ x.openModules;
 ::
 
 section::But wait! There's more!
-Below is a list of other quarks that use Codex. 
+Below is a (growing) list of other quarks that use Codex. 
 definitionlist::
 ##link::https://github.com/ianmacdougald/Codices##Codices::
 ||A bunch of classes and subframeworks of Codex.  
 	list::
 	##CodexSingelton implements a class-only interface for Codex.
-	##CodexProxier sequences entire scripts within a link::Classes/ProxySpace::.
+	##CodexSections is a sequencer of SuperCollider scripts. 
+	##CodexProxier sequences scripts within a link::Classes/ProxySpace::.
 	##CodexSonata inherits from CodexProxier, adding a timing control. 
-	##CodexInstrument uses the modular interface to control link::Classes/Synth:: objects. 
-	##CodexGuiKit defines, stores, and recalls customized gui elements. 
-	##CodexPanel acts as a generic gui for Codex-derived classes.
 	::
 ##link::https://github.com/ianmacdougald/Raptor##Raptor::
 ||An iterative pattern renderer, which renders patterns in non-realtime. 
