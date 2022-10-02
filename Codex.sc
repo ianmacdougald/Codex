@@ -1,5 +1,5 @@
 Codex {
-	classvar <directory, quark, cache;
+	classvar <directory, <quark, cache;
 	var <moduleSet, <modules, <>know = true;
 
 	*initClass {
@@ -36,18 +36,18 @@ Codex {
 	*preload { | modules | }
 
 	*loadModules { | set, from |
-		var dict, path;
+		var classCache, path;
 		var modules;
 
-		dict = this.cache ?? {
-			var classCache = Dictionary.new;
-			cache.add(this.name -> classCache);
-			classCache;
+		classCache = this.cache ?? {
+			var dict = Dictionary.new;
+			cache.add(this.name -> dict);
+			dict;
 		};
 
 		path = this.classFolder+/+set;
 
-		dict[set] ?? {
+		classCache[set] ?? {
 			if (path.exists) {
 				this.loadScripts(set);
 			} /* else */ {
@@ -56,15 +56,15 @@ Codex {
 					this.makeTemplates(CodexTemplater(path));
 					this.loadScripts(set);
 				} /* else */ {
-					dict.add(set -> this.loadModules(from)
+					classCache.add(set -> this.loadModules(from)
 						.initialize(this.name++"_"++set++"_"));
 
-					fork { (this.classFolder+/+from).copyScriptsTo(path) };
+					(this.classFolder+/+from).copyScriptsTo(path);
 				};
 			};
 		};
 
-		modules = dict[set].deepCopy;
+		modules = classCache[set].deepCopy;
 		this.preload(modules);
 		^modules;
 	}
@@ -220,8 +220,8 @@ Codex {
 					^modules[selector.asGetter] = args[0];
 				} /* else */{
 					warn(
-						"Can only overwrite pseudo-variable module"
-						++" with object of the same type."
+						"You can only overwrite pseudo-variable module"
+						++" with an object of the same type."
 					);
 					^this;
 				};
@@ -251,13 +251,20 @@ CodexModules : Environment {
 	compileFolder { | folder |
 		folder !? {
 			folder.getScripts.do { | file |
-				var path, key;
+				var path, key, result;
 
 				path = PathName(file);
 				key = path.fileName[0].toLower
 				++ path.fileNameWithoutExtension[1..];
 
-				this.add(key.asSymbol -> file.compileFile);
+				result = file.compileFile;
+
+				result ?? {
+					"!Problem in module %%.scd"
+					.format(path.pathOnly, key).postln;
+				};
+
+				this.add(key.asSymbol -> result);
 			};
 		};
 	}
