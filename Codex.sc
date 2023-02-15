@@ -188,15 +188,17 @@ Codex {
 	openScripts { this.open(keys: modules.keys.asArray.sort) }
 
 	closeScripts {
-		if(Platform.ideName=="scqt") {
-			var document = \Document.asClass;
-			if(document.notNil) {
-				document.perform(\allDocuments).do { | doc, index |
-					if(doc.dir==this.moduleFolder) {
-						doc.close;
-					};
+		var current, document = \Document.asClass;
+		if (document.notNil and: { Platform.ideName=="scqt"}) {
+			current = document.current;
+
+			document.perform(\openDocuments).do { | doc, index |
+				if(doc.dir==this.moduleFolder) {
+					doc.close;
 				};
 			};
+
+			current.front;
 		};
 	}
 
