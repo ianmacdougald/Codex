@@ -57,7 +57,7 @@ Codex {
 					this.loadScripts(set);
 				} /* else */ {
 					classCache.add(set -> this.loadModules(from)
-						.initialize(this.name++"_"++set++"_"));
+						.label_(this.name++"_"++set++"_"));
 
 					(this.classFolder+/+from).copyScriptsTo(path);
 				};
@@ -74,8 +74,10 @@ Codex {
 	*makeTemplates { | templater | }
 
 	*loadScripts { | set |
-		this.cache.add(set -> CodexModules(this.classFolder+/+set)
-			.initialize(this.name++"_"++set++"_"));
+		this.cache.add(set -> CodexModules(
+			folder: this.classFolder+/+set,
+			label: this.name++"_"++set++"_"
+		));
 	}
 
 	*copyVersions {
@@ -238,16 +240,14 @@ Codex {
 	}
 }
 
-CodexModules : Environment {
-	var semaphore, synthDefArr;
+CodexModules : EnvironmentRedirect {
+	var <label;
 
-	*new { | folder |
-		^super.new.know_(true).initModules(folder);
-	}
-
-	initModules { | folder |
-		semaphore = Semaphore.new(1);
-		this.compileFolder(folder);
+	*new { | folder, label |
+		^super.new
+		.compileFolder(folder)
+		.label_(label)
+		.know_(true);
 	}
 
 	compileFolder { | folder |
@@ -266,113 +266,98 @@ CodexModules : Environment {
 					.format(path.pathOnly, key).postln;
 				};
 
-				this.add(key.asSymbol -> result);
+				this.add(key.asSymbol -> CodexObject(key, result, this));
 			};
 		};
 	}
 
-	add { | anAssociation |
-		this.put(
-			anAssociation.key,
-			CodexObject.new(
-				anAssociation.key,
-				anAssociation.value,
-				this
-			);
-		);
-	}
-
-	initialize { | label |
-		var synthDefs;
-
-		synthDefArr = this.getSynthDefs;
-
-		this.use {
-			this.array.copy.do { | object |
-				try { object = object.check };
-
-				if (object.isKindOf(SynthDef)) {
-					synthDefArr = synthDefArr.add(object);
-					object.metadata.name ?? {
-						object.metadata.name = object.name;
-					};
-					object.name = (label++object.metadata.name).asSymbol;
-				};
-			};
+	put { | key, obj |
+		if (obj.isKindOf(SynthDef)) {
+			this.tagSynthDef(obj, label);
 		};
 
-		this.addSynthDefs;
+		super.put(key.asSymbol, obj);
 	}
 
-	addSynthDefs {
-		fork {
-			semaphore.wait;
-			synthDefArr.do { | synthDef | synthDef.add };
-			semaphore.signal;
+	tagSynthDef { | synthDef, as("") |
+		synthDef.metadata.name ?? {
+			synthDef.metadata.name = synthDef.name;
 		};
+
+		synthDef.name = (as++synthDef.metadata.name).asSymbol;
+		fork { synthDef.add };
 	}
 
 	removeSynthDefs {
 		fork {
-			semaphore.wait;
-			synthDefArr.do { | synthDef |
+			this.getSynthDefs.do { | synthDef |
 				SynthDef.removeAt(synthDef.value.name);
 			};
-			semaphore.signal;
 		};
 	}
 
 	getSynthDefs {
-		^synthDefArr ? [];
+		// synthDefArr !? { ^synthDefArr };
+		^this.envir.array.select { | object |
+			case
+			{ object.isKindOf(SynthDef) } { true }
+			{ object.isKindOf(CodexObject) } {
+				object.value.isKindOf(SynthDef);
+			}
+			{ false }
+		};
+		// ^synthDefArr;
 	}
 
-	findSynthDefs {
-		synthDefArr = this.array.select { | object |
-			object.isKindOf(SynthDef);
-		};
-		^synthDefArr;
+	initialize {
+		this.use {
+			this.envir.array.do { | object |
+				if (object.isKindOf(CodexObject)) {
+					object.value;
+				}
+			}
+		}
 	}
 
-	tagSynthDefs { | label |
-		this.findSynthDefs.do { | synthDef |
-			synthDef.metadata.name ?? {
-				synthDef.metadata.name = synthDef.name;
-			};
-			synthDef.name = (label++synthDef.metadata.name).asSymbol;
-		};
-
-		this.addSynthDefs;
+	label_{ | newLabel |
+		newLabel ?? { ^this };
+		label = newLabel;
+		this.initialize;
 	}
 
 	clear {
-		if (synthDefArr.notEmpty) {
-			this.removeSynthDefs;
-		};
-		synthDefArr = nil;
+		this.removeSynthDefs;
 		super.clear;
 	}
+
+	asEvent { ^this.envir.asEvent }
 }
 
 CodexObject {
-	var <>key, <>function, <>envir;
+	var <>key, <>source, <>envir;
 	var evalFunc;
 
-	*new { | key, function, envir |
-		^super.newCopyArgs(key, function, envir).initEval;
+	*new { | key, source, envir |
+		^super.newCopyArgs(key.asSymbol, source, envir ? currentEnvironment).initEval;
 	}
 
 	initEval {
 		evalFunc = { | ... args |
-			if (envir[key]==this || envir[key].isNil) {
-				envir[key] = envir.use { function.valueEnvir(*args) } ?? {
+			var inEnvir = envir[key];
+			var result;
+			if (inEnvir==this || inEnvir.isNil) {
+
+				result = envir.use { source.valueEnvir(*args) } ?? {
 					envir = currentEnvironment;
 					evalFunc = { | ... args |
-						envir.use { function.valueEnvir(*args) };
+						envir.use { source.valueEnvir(*args) };
 					};
 					this;
 				};
+
+				envir.put(key, result);
 			};
-			envir[key];
+			result;
 		};
 	}
 
