@@ -18,7 +18,7 @@ Codex {
 			);
 		};
 		cache = Dictionary.new;
-		this.subclasses.do(_.copyVersions);
+		this.allSubclasses.do(_.copyVersions);
 	}
 
 	*new { | moduleSet, from |
