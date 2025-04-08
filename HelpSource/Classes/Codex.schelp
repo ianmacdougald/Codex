@@ -5,7 +5,7 @@ related::Guides/Codex
 keyword::codex
 
 DESCRIPTION::
-Codex establishes a framework for both developing classes that are comprised of interconnected scriptable modules. The class manages the directory of all of its subclasses' modules, providing a simple interface for loading, unloading, cloning, and generating modules from link::Classes/CodexTemplater##templates::.
+Codex establishes a framework for developing classes that are comprised of interconnected scriptable modules. The class manages the directory of all of its subclasses' modules, providing a simple interface for loading, unloading, cloning, and generating modules from link::Classes/CodexTemplater##templates::.
 
 note::Codex should not be instantiated. Rather, it is meant to encapsulate behaviors on behalf of its subclasses. So instance those instead.
 ::
@@ -22,7 +22,7 @@ argument::from
 
 method::directory
 Gets and (persistently) sets the path to the directory of modules for all subclasses of Codex.
-note::Before using a subclass of Codex for the first time, be sure to configure the path to the directory of modules. This can be done either through the interface of Codex or any of its subclasses. However, any change made will affect all subclasses of Codex.
+note::Before using a subclass of Codex for the first time, be sure to configure the path to the directory of modules. This can be done either through the interface of Codex or any of its subclasses. Be aware that any change made to the directory field will by design affect all subclasses of Codex.
 code::
 //Check where the directory is.
 Codex.directory.postln;
@@ -98,11 +98,12 @@ method::open
 argument::... keys
 Symbols specifying which modules to open.
 
-method::open_scqt
+method::openSCQt
 argument::... keys
 Symbols specifying which modules to open.
 
-method::open_scvim
+
+method::openSCVim
 Open a single module or group of modules using scvim.
 argument::shell
 A String representing the name of the shell to use to open vim/nvim.
@@ -113,16 +114,16 @@ A Boolean determining if modules files will be opened vertically or horizontally
 argument::... keys
 Symbols specifying which modules to open.
 
-method::openModules
+method::openScripts
 Open each module's associated scripts.
 
-method::closeModules
-Close all of the open module files.
+method::closeScripts
+Close all of the open module script files.
 note::This is only implemented for scqt.::
 
 private::doesNotUnderstand
 method::know
-If set to true, the instance interprets method calls as look-ups in the collection of modules.
+If set to true, the instance interprets unknown method calls as look-ups in the collection of modules.
 
 private::initCodex
 private::getModules
