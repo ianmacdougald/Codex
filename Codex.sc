@@ -234,10 +234,6 @@ Codex {
 
 		^this.superPerformList(\doesNotUnderstand, selector, args);
 	}
-
-	notes {
-		^try { (this.moduleFolder+/+"notes.txt").load };
-	}
 }
 
 CodexModules : EnvironmentRedirect {
