@@ -7,19 +7,16 @@ keyword::codex, codices
 section::Description
 Codex establishes a framework for developing class interfaces that
 make use of scriptable modules. Its original purpose was to facilitate
-a mode of class-based music composition that allows for easy reuse of code: 
-scripted modules were to define the music making functions
-and data structures necessary for a specific composition while the instance of
-the class managing those
-modules could be used across works. 
+a mode of class-based music composition that allows for easy reuse of code:
+scripted modules could be configured to enable composition-specific music-making functions while the design of the class interface itself could be reused across different projects.
 
 More generally, the framework aims to support a best-of-both-worlds situation that balances the specificity of a compiled class's interface with the open-ended potential of scripting. link::Classes/Codex:: coordinates these operations on behalf of its subclasses and maintains a central directory of modules.
 
 section::Managing modules
 
-Each class that inherits from Codex has its modules stored in Codex's directory of modules. The modules themselves are organized in layers of subfolders that are defined on a per-class-per-collection basis. The path to the directory can be gotten and set through link::Classes/Codex#*directory::. If the path to the directory of modules is reset, the new configuration will persist across sessions of the link::Classes/Interpreter::.
+Each class that inherits from Codex has its modules stored in Codex's directory of modules. The modules themselves are organized in layers of subfolders that are defined on a per-class per-collection basis. The path to the directory can be retrieved and set through link::Classes/Codex#*directory::. If the path to the directory of modules is reset, the new configuration will persist across sessions of the link::Classes/Interpreter::.
 
-note::Be sure to configure the path to the modules' directory. By default, the directory is stored in the folder of this quark.
+note::Be sure to configure the path to the modules' directory. By default, the directory is stored in the folder of the Codex quark.
 code::
 //Check where the directory is.
 Codex.directory.postln;
@@ -58,7 +55,7 @@ tree::
 
 subsection::Class folders
 Class folders are generated automatically.  A class that contains references
-to predefined 
+to predefined
 versions of its modules will create both its class folder and subfolders filled
 with modules
  when sclang is recompiled, and this process will be repeated if any of those
@@ -215,18 +212,18 @@ x.openModules;
 ::
 
 section::But wait! There's more!
-Below is a (growing) list of other quarks that use Codex. 
+Below is a (growing) list of other quarks that use Codex.
 definitionlist::
 ##link::https://github.com/ianmacdougald/Codices##Codices::
-||A bunch of classes and subframeworks of Codex.  
+||A bunch of classes and subframeworks of Codex.
 	list::
 	##CodexSingelton implements a class-only interface for Codex.
-	##CodexSections is a sequencer of SuperCollider scripts. 
+	##CodexSections is a sequencer of SuperCollider scripts.
 	##CodexProxier sequences scripts within a link::Classes/ProxySpace::.
-	##CodexSonata inherits from CodexProxier, adding a timing control. 
+	##CodexSonata inherits from CodexProxier, adding a timing control.
 	::
 ##link::https://github.com/ianmacdougald/Raptor##Raptor::
-||An iterative pattern renderer, which renders patterns in non-realtime. 
+||An iterative pattern renderer, which renders patterns in non-realtime.
 ##link::https://github.com/ianmacdougald/TippyTaps##TippyTaps::
 ||A crude keyboard-based instrument
 ##link::https://github.com/ianmacdougald/GenOrg##GenOrg::

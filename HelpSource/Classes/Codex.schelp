@@ -54,7 +54,7 @@ method::contribute
 A private method for internal use only that manages versions of pre-configured modules to be distributed with a class inheriting from Codex.
 
 note::
-To make a contribution, overwrite this method by adding link::Classes/Association##assocations:: to the dictionry argument like so. This allows modules to be distributed with quarks and be made available to users with despite their unique configurations.
+To make a contribution, overwrite this method by adding link::Classes/Association##assocations:: to the dictionry passed into the method as an argument. To distribute preconfigured modules with a Codex-based quark, have the path string point to the relative path of the preconfigured modules within the source folder of the derived project.
 
 code::
 *contribute { | versions |
